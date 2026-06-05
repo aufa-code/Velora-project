@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 from typing import Optional, List, Dict
-from database.supabase import create_session
+from backend.database.supabase import create_session
 
 router = APIRouter(
     prefix="/setup",

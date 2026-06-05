@@ -2,9 +2,9 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 from typing import List, Dict, Any
 
-from database.supabase import get_session, save_message, get_messages
-from services.prompt import build_final_prompt
-from services.groq import get_ai_response
+from backend.database.supabase import get_session, save_message, get_messages
+from backend.services.prompt import build_final_prompt
+from backend.services.groq import get_ai_response
 
 router = APIRouter(prefix="/session", tags=["Session"])
 
