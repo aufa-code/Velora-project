@@ -50,7 +50,7 @@ const Session = () => {
 
     try {
       // POST ke http://localhost:8000/session/chat membawa data {session_id, message}
-      const response = await axios.post('http://localhost:8000/session/chat', {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/session/chat`, {
         session_id: sessionId,
         message: userMessage
       });

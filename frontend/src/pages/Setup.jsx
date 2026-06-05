@@ -31,7 +31,7 @@ export default function Setup() {
         if (tujuan) {
             setLoadingMethods(true);
             setError('');
-            axios.get('http://localhost:8000/setup/methods')
+            axios.get(`${process.env.REACT_APP_API_URL}/setup/methods`)
                 .then((res) => {
                     setMethods(res.data);
                     setStep(3); // Melangkah ke pemilihan metode belajar setelah data siap
@@ -63,7 +63,7 @@ export default function Setup() {
             universe: pakaiUniverse ? universe : ''
         };
 
-        axios.post('http://localhost:8000/setup/start', payload)
+        axios.post(`${process.env.REACT_APP_API_URL}/setup/start`, payload)
             .then((res) => {
                 if (res.data && res.data.session_id) {
                     navigate('/session', { state: { sessionId: res.data.session_id } });
