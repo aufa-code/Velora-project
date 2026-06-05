@@ -14,6 +14,7 @@ app = FastAPI(
 # Setup CORS - Izinkan request dari React development server
 origins = [
     "http://localhost:3000",
+    "https://velora-frontend-phi.vercel.app",
 ]
 
 app.add_middleware(
