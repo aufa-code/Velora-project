@@ -1,0 +1,37 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from routes import setup, session
+
+app = FastAPI(
+    title="Velora API",
+    version="1.0.0"
+)
+
+# Setup CORS - Izinkan request dari React development server
+origins = [
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include Routers
+app.include_router(setup.router)
+app.include_router(session.router)
+
+# Root Endpoint
+@app.get("/")
+async def root():
+    return {
+        "status": "running",
+        "message": "FastAPI server is running smoothly"
+    }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
