@@ -10,11 +10,13 @@ const Session = () => {
   const sessionId = location.state?.sessionId;
 
   // State untuk menyimpan alur chat bubble
+  const sessionData = location.state;
+  const materiLabel = sessionData?.materi || localStorage.getItem('velora_materi') || 'materi yang kamu pilih';
   const [messages, setMessages] = useState([
-    {
-      sender: 'ai',
-      text: 'Halo! Aku Velora, asisten belajar AI kamu. Ada materi atau konsep yang ingin kita bahas sekarang?'
-    }
+  {
+    sender: 'ai',
+    text: `Oke, kita mulai belajar tentang "${materiLabel}". Mau mulai dari mana?`
+  }
   ]);
   
   // State untuk input pesan dan loading indicator

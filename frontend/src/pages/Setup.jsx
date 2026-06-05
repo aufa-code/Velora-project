@@ -66,7 +66,8 @@ export default function Setup() {
         axios.post(`${process.env.REACT_APP_API_URL}/setup/start`, payload)
             .then((res) => {
                 if (res.data && res.data.session_id) {
-                    navigate('/session', { state: { sessionId: res.data.session_id } });
+                    localStorage.setItem('velora_materi', materi);
+                    navigate('/session', { state: { sessionId: res.data.session_id, materi: materi } });
                 } else {
                     setError('Sesi gagal dibuat. Format respon data tidak sesuai.');
                 }
