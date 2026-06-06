@@ -1,30 +1,30 @@
 import os
+import requests
 from dotenv import load_dotenv
-from groq import Groq, GroqError, APIConnectionError, APITimeoutError
 
 load_dotenv()
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
-if not GROQ_API_KEY:
-    raise ValueError("GROQ_API_KEY tidak ditemukan di environment variables / file .env")
-
-client = Groq(api_key=GROQ_API_KEY)
+if not OPENROUTER_API_KEY:
+    raise ValueError("OPENROUTER_API_KEY tidak ditemukan di environment variables")
 
 def get_ai_response(payload: list) -> str:
     try:
-        completion = client.chat.completions.create(
-    model="llama-3.3-70b-versatile",
-    messages=payload,
-    temperature=0.2,
-    )
-        return completion.choices[0].message.content
+        response = requests.post(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "mistralai/mistral-7b-instruct:free",
+                "messages": payload,
+                "temperature": 0.3,
+            }
+        )
+        data = response.json()
+        return data["choices"][0]["message"]["content"]
 
-    except APITimeoutError:
-        return "Error: Koneksi ke Groq API kehabisan waktu (Timeout). Silakan coba lagi."
-    except APIConnectionError:
-        return "Error: Gagal terhubung ke server Groq API. Periksa koneksi internet Anda."
-    except GroqError as e:
-        return f"Groq API Error: {str(e)}"
     except Exception as e:
-        return f"Terjadi kesalahan sistem yang tidak terduga: {str(e)}"
+        return f"Terjadi kesalahan sistem: {str(e)}"
