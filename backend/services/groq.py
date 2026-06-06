@@ -14,9 +14,10 @@ client = Groq(api_key=GROQ_API_KEY)
 def get_ai_response(payload: list) -> str:
     try:
         completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            temperature=0.2,
-        )
+    model="llama-3.3-70b-versatile",
+    messages=payload,
+    temperature=0.2,
+    )
         return completion.choices[0].message.content
 
     except APITimeoutError:
