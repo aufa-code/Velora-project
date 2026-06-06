@@ -18,7 +18,7 @@ def get_ai_response(payload: list) -> str:
                 "Content-Type": "application/json"
             },
             json={
-                "model": "mistralai/mistral-7b-instruct:free",
+                "model": "google/gemini-2.0-flash-exp:free",
                 "messages": payload,
                 "temperature": 0.3,
             }
