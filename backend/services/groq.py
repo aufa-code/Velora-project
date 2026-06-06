@@ -24,6 +24,8 @@ def get_ai_response(payload: list) -> str:
             }
         )
         data = response.json()
+        if "choices" not in data:
+            return f"Error dari OpenRouter: {data}"
         return data["choices"][0]["message"]["content"]
 
     except Exception as e:
