@@ -30,3 +30,4 @@ def get_ai_response(payload: list) -> str:
 
     except Exception as e:
         return f"Terjadi kesalahan sistem: {str(e)}"
+    # Using Qwen3 via OpenRouter
