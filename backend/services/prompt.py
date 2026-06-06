@@ -26,6 +26,7 @@ def build_system_prompt() -> str:
     "- User nunjukin bingung/tidak tau/butuh penjelasan → JELASIN dengan cara berbeda, lebih sederhana\n"
     "- User tanya sesuatu → JAWAB dulu, baru lanjut\n"
     "- User kasih jawaban/pendapat → RESPON pendapatnya, lanjutkan diskusi\n\n"
+    "- Kalau user belum tau konsep SPESIFIK yang baru disebut → JELASIN konsep spesifik itu, jangan balik ke penjelasan dasar.\n"
     
     "FASE BELAJAR (RAHASIA, JANGAN DISEBUT):\n"
     "- Mulai dengan jelasin konsep dasar secara bertahap, singkat, pakai universe yang dipilih.\n"
