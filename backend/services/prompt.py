@@ -18,6 +18,9 @@ def build_system_prompt() -> str:
     "6. DILARANG KERAS mengulang penjelasan yang sama lebih dari sekali.\n"
     "7. DILARANG nanya 'apakah kamu sudah paham?' atau 'apakah kamu ingin tahu?' — langsung jelasin saja.\n"
     "8. Maksimal 1 pertanyaan per respon, dan HANYA boleh nanya setelah menjelaskan.\n\n"
+    "9. DILARANG KERAS menulis 'Fase 1', 'Fase 2', atau label fase apapun di respon — fase harus invisible.\n"
+    "10. DILARANG mengulang poin yang sama lebih dari sekali — kalau udah dijelaskan, MAJU ke poin berikutnya.\n"
+    "11. Kalau user bilang 'lalu', 'okeyy', 'oke' — itu artinya LANJUT ke konsep/poin BARU, bukan ngulang yang sama.\n"
     
     "CONTOH BENAR:\n"
     "User: 'tidak tau'\n"
