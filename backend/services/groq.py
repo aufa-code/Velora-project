@@ -1,46 +1,30 @@
 import os
 from dotenv import load_dotenv
-import google.generativeai as genai
+from groq import Groq, GroqError, APIConnectionError, APITimeoutError
 
 load_dotenv()
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-if not GEMINI_API_KEY:
-    raise ValueError("GEMINI_API_KEY tidak ditemukan di environment variables / file .env")
+if not GROQ_API_KEY:
+    raise ValueError("GROQ_API_KEY tidak ditemukan di environment variables / file .env")
 
-genai.configure(api_key=GEMINI_API_KEY)
+client = Groq(api_key=GROQ_API_KEY)
 
 def get_ai_response(payload: list) -> str:
     try:
-        # Pisahkan system prompt dan history
-        system_instruction = ""
-        history = []
-        last_user_message = ""
-
-        for msg in payload:
-            if msg["role"] == "system":
-                system_instruction = msg["content"]
-            elif msg["role"] == "user":
-                last_user_message = msg["content"]
-                if history and history[-1]["role"] == "user":
-                    history.append({"role": "model", "parts": ["..."]})
-                history.append({"role": "user", "parts": [msg["content"]]})
-            elif msg["role"] == "assistant":
-                history.append({"role": "model", "parts": [msg["content"]]})
-
-        # Hapus pesan user terakhir dari history karena akan dikirim via send_message
-        if history and history[-1]["role"] == "user":
-            history = history[:-1]
-
-        model = genai.GenerativeModel(
-            model_name="gemini-2.0-flash",
-            system_instruction=system_instruction
+        completion = client.chat.completions.create(
+            model="gemma2-9b-it",
+            messages=payload,
+            temperature=0.3,
         )
+        return completion.choices[0].message.content
 
-        chat = model.start_chat(history=history)
-        response = chat.send_message(last_user_message)
-        return response.text
-
+    except APITimeoutError:
+        return "Error: Koneksi ke Groq API kehabisan waktu (Timeout). Silakan coba lagi."
+    except APIConnectionError:
+        return "Error: Gagal terhubung ke server Groq API. Periksa koneksi internet Anda."
+    except GroqError as e:
+        return f"Groq API Error: {str(e)}"
     except Exception as e:
-        return f"Terjadi kesalahan: {str(e)}"
+        return f"Terjadi kesalahan sistem yang tidak terduga: {str(e)}"
