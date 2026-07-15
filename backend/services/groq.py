@@ -18,7 +18,7 @@ def get_ai_response(payload: list) -> str:
                 "Content-Type": "application/json"
             },
             json={
-                "model": "qwen/qwen3-coder-480b-a35b:free",
+                "model": "qwen/qwen3-coder:free",
                 "messages": payload,
                 "temperature": 0.3,
             }
