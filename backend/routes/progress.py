@@ -1,34 +1,42 @@
 from fastapi import APIRouter
-from backend.database.supabase import get_all_sessions, get_messages
-
+from collections import defaultdict
+from backend.database.supabase import get_all_sessions, get_all_messages
+​
 router = APIRouter(prefix="/progress", tags=["Progress"])
-
+​
+​
 @router.get("")
 async def get_progress():
-    """
-    Ringkasan progress belajar: daftar sesi + jumlah interaksi tiap sesi.
-    """
+    """Ringkasan progress belajar: daftar sesi + jumlah interaksi tiap sesi."""
     sessions = get_all_sessions()
+    messages = get_all_messages()
+​
+    # Hitung jumlah pesan per sesi sekali jalan (tanpa query berulang)
+    total_per_sesi = defaultdict(int)
+    tanya_per_sesi = defaultdict(int)
+    for m in messages:
+        sid = m.get("session_id")
+        total_per_sesi[sid] += 1
+        if m.get("role") == "user":
+            tanya_per_sesi[sid] += 1
+​
     hasil = []
-    total_pesan = 0
-
     for s in sessions:
-        messages = get_messages(s["id"])
-        jumlah_tanya = len([m for m in messages if m.get("role") == "user"])
-        total_pesan += len(messages)
+        sid = s.get("id")
         hasil.append({
-            "id": s.get("id"),
+            "id": sid,
             "materi": s.get("materi"),
             "tujuan": s.get("tujuan"),
             "metode": s.get("metode"),
             "universe": s.get("universe"),
             "created_at": s.get("created_at"),
-            "jumlah_pesan": len(messages),
-            "jumlah_tanya": jumlah_tanya,
+            "jumlah_pesan": total_per_sesi.get(sid, 0),
+            "jumlah_tanya": tanya_per_sesi.get(sid, 0),
         })
-
+​
     return {
         "total_sesi": len(sessions),
-        "total_pesan": total_pesan,
+        "total_pesan": len(messages),
         "sessions": hasil,
     }
+​
