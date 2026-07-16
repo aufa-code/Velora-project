@@ -81,7 +81,7 @@ def get_messages(session_id: str) -> List[Dict[str, Any]]:
             supabase.table("messages")
             .select("*")
             .eq("session_id", session_id)
-            .order("created_at", ascending=True)
+            .order("created_at", desc=False)
             .execute()
         )
         return response.data if response.data else []
@@ -99,7 +99,7 @@ def get_all_sessions() -> List[Dict[str, Any]]:
         response = (
             supabase.table("sessions")
             .select("*")
-            .order("created_at", ascending=False)
+            .order("created_at", desc=True)
             .execute()
         )
         return response.data if response.data else []
