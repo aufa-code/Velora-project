@@ -1,49 +1,54 @@
 import traceback
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from collections import defaultdict
-from backend.database.supabase import get_all_sessions, get_all_messages
+from backend.database.supabase import supabase
 
 router = APIRouter(prefix="/progress", tags=["Progress"])
 
 
 @router.get("")
 async def get_progress():
-    """Ringkasan progress belajar: daftar sesi + jumlah interaksi tiap sesi."""
+    """Ringkasan progress belajar. Versi CEPAT: total dihitung langsung di
+    database (count), jadi aman walau pesannya ribuan."""
     try:
-        sessions = get_all_sessions()
-        messages = get_all_messages()
+        # 1) Total sesi & total pesan -> dihitung di DB, tanpa narik semua baris
+        sesi_count = (
+            supabase.table("sessions").select("id", count="exact").limit(1).execute()
+        )
+        pesan_count = (
+            supabase.table("messages").select("id", count="exact").limit(1).execute()
+        )
+        total_sesi = sesi_count.count or 0
+        total_pesan = pesan_count.count or 0
 
-        # Hitung jumlah pesan per sesi sekali jalan (tanpa query berulang)
-        total_per_sesi = defaultdict(int)
-        tanya_per_sesi = defaultdict(int)
-        for m in messages:
-            sid = m.get("session_id")
-            total_per_sesi[sid] += 1
-            if m.get("role") == "user":
-                tanya_per_sesi[sid] += 1
+        # 2) Daftar sesi (dibatasi 200 biar aman & cepat)
+        sessions_resp = (
+            supabase.table("sessions")
+            .select("*")
+            .order("created_at", ascending=False)
+            .limit(200)
+            .execute()
+        )
+        sessions = sessions_resp.data or []
 
         hasil = []
         for s in sessions:
-            sid = s.get("id")
             hasil.append({
-                "id": sid,
+                "id": s.get("id"),
                 "materi": s.get("materi"),
                 "tujuan": s.get("tujuan"),
                 "metode": s.get("metode"),
                 "universe": s.get("universe"),
                 "created_at": s.get("created_at"),
-                "jumlah_pesan": total_per_sesi.get(sid, 0),
-                "jumlah_tanya": tanya_per_sesi.get(sid, 0),
             })
 
         return {
-            "total_sesi": len(sessions),
-            "total_pesan": len(messages),
+            "total_sesi": total_sesi,
+            "total_pesan": total_pesan,
+            "jumlah_sesi_ditampilkan": len(hasil),
             "sessions": hasil,
         }
     except Exception as e:
-        # Kalau ada error, tampilkan jelas (jangan blank 500)
         return JSONResponse(
             status_code=500,
             content={
