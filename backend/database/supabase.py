@@ -19,19 +19,15 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
 def create_session(materi: str, tujuan: str, metode: str, universe: str) -> Optional[str]:
-    """
-    Membuat sesi belajar baru di tabel 'sessions'.
-    Mengembalikan session_id (str) jika berhasil, atau None jika gagal.
-    """
+    """Membuat sesi belajar baru di tabel 'sessions'. Return session_id atau None."""
     try:
         data = {
             "materi": materi,
             "tujuan": tujuan,
             "metode": metode,
-            "universe": universe
+            "universe": universe,
         }
         response = supabase.table("sessions").insert(data).execute()
-        
         if response.data and len(response.data) > 0:
             return response.data[0].get("id")
         return None
@@ -44,13 +40,9 @@ def create_session(materi: str, tujuan: str, metode: str, universe: str) -> Opti
 
 
 def get_session(session_id: str) -> Optional[Dict[str, Any]]:
-    """
-    Mengambil data sesi belajar berdasarkan session_id dari tabel 'sessions'.
-    Mengembalikan dictionary data sesi, atau None jika tidak ditemukan/gagal.
-    """
+    """Mengambil data sesi belajar berdasarkan session_id."""
     try:
         response = supabase.table("sessions").select("*").eq("id", session_id).execute()
-        
         if response.data and len(response.data) > 0:
             return response.data[0]
         return None
@@ -63,18 +55,14 @@ def get_session(session_id: str) -> Optional[Dict[str, Any]]:
 
 
 def save_message(session_id: str, role: str, content: str) -> Optional[Dict[str, Any]]:
-    """
-    Menyimpan satu pesan baru ke tabel 'messages'.
-    Mengembalikan data pesan yang disimpan, atau None jika gagal.
-    """
+    """Menyimpan satu pesan baru ke tabel 'messages'."""
     try:
         data = {
             "session_id": session_id,
             "role": role,
-            "content": content
+            "content": content,
         }
         response = supabase.table("messages").insert(data).execute()
-        
         if response.data and len(response.data) > 0:
             return response.data[0]
         return None
@@ -87,11 +75,7 @@ def save_message(session_id: str, role: str, content: str) -> Optional[Dict[str,
 
 
 def get_messages(session_id: str) -> List[Dict[str, Any]]:
-    """
-    Mengambil semua pesan berdasarkan session_id dari tabel 'messages',
-    diurutkan dari yang paling lama (kronologis berdasarkan created_at).
-    Mengembalikan list dari dictionary pesan.
-    """
+    """Mengambil semua pesan berdasarkan session_id, urut kronologis (lama -> baru)."""
     try:
         response = (
             supabase.table("messages")
@@ -109,12 +93,8 @@ def get_messages(session_id: str) -> List[Dict[str, Any]]:
         return []
 
 
-
 def get_all_sessions() -> List[Dict[str, Any]]:
-    """
-    Mengambil semua sesi belajar dari tabel 'sessions',
-    diurutkan dari yang terbaru.
-    """
+    """Mengambil semua sesi belajar, urut dari yang terbaru."""
     try:
         response = (
             supabase.table("sessions")
@@ -129,7 +109,6 @@ def get_all_sessions() -> List[Dict[str, Any]]:
     except Exception as e:
         print(f"Unexpected error saat get_all_sessions: {e}")
         return []
-
 
 
 def get_all_messages() -> List[Dict[str, Any]]:
