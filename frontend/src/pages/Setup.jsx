@@ -231,6 +231,7 @@ export default function Setup() {
                 <div style={styles.header}>
                     <h1 style={styles.title}>Inisialisasi Velora AI</h1>
                     <p style={styles.subtitle}>Rancang personalisasi ruang belajar cerdas Anda</p>
+                    <button onClick={() => navigate('/dashboard')} style={{marginTop:'14px',padding:'8px 20px',backgroundColor:'transparent',color:'#8b8bff',border:'1px solid #2d2d44',borderRadius:'100px',fontSize:'13px',fontWeight:600,cursor:'pointer'}}>📊 Lihat Progress Belajar</button>
                 </div>
 
                 {error && <div style={styles.errorMsg}>{error}</div>}
