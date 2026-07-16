@@ -108,6 +108,8 @@ def get_messages(session_id: str) -> List[Dict[str, Any]]:
         print(f"Unexpected error saat get_messages: {e}")
         return []
 
+
+
 def get_all_sessions() -> List[Dict[str, Any]]:
     """
     Mengambil semua sesi belajar dari tabel 'sessions',
@@ -126,4 +128,19 @@ def get_all_sessions() -> List[Dict[str, Any]]:
         return []
     except Exception as e:
         print(f"Unexpected error saat get_all_sessions: {e}")
+        return []
+
+
+
+def get_all_messages() -> List[Dict[str, Any]]:
+    """Ambil semua pesan (session_id & role) dalam SATU query."""
+    try:
+        response = (
+            supabase.table("messages")
+            .select("session_id, role")
+            .execute()
+        )
+        return response.data if response.data else []
+    except Exception as e:
+        print(f"Unexpected error saat get_all_messages: {e}")
         return []
