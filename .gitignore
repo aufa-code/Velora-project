@@ -1,2 +1,25 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Environment
+.env
+.env.local
+
+# Build output
+frontend/build/
+build/
+
+# Vercel
 .vercel
-.env*
+
+# OS / editor junk
+.DS_Store
+*.log
