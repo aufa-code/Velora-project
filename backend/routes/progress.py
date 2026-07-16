@@ -22,10 +22,11 @@ async def get_progress():
         total_pesan = pesan_count.count or 0
 
         # 2) Daftar sesi (dibatasi 200 biar aman & cepat)
+        #    NOTE: versi supabase-py sekarang pakai desc=True (bukan ascending=)
         sessions_resp = (
             supabase.table("sessions")
             .select("*")
-            .order("created_at", ascending=False)
+            .order("created_at", desc=True)
             .limit(200)
             .execute()
         )
