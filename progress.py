@@ -1,55 +1,35 @@
 import traceback
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from collections import defaultdict
 
 router = APIRouter(prefix="/progress", tags=["Progress"])
 
 
 @router.get("")
 async def get_progress():
-    """VERSI DEBUG: kalau ada error, tampilkan detailnya langsung di response."""
+    """VERSI DETEKTIF: ambil sedikit data + tampilkan error kalau ada."""
     debug = {"step": "start"}
     try:
-        debug["step"] = "import supabase"
-        from backend.database.supabase import get_all_sessions, get_all_messages
+        debug["step"] = "import supabase client"
+        from backend.database.supabase import supabase
 
-        debug["step"] = "get_all_sessions()"
-        sessions = get_all_sessions()
+        debug["step"] = "query sessions (limit 5)"
+        sess_resp = supabase.table("sessions").select("*").limit(5).execute()
+        sessions = sess_resp.data or []
         debug["sessions_count"] = len(sessions)
 
-        debug["step"] = "get_all_messages()"
-        messages = get_all_messages()
+        debug["step"] = "query messages (limit 5)"
+        msg_resp = (
+            supabase.table("messages").select("session_id, role").limit(5).execute()
+        )
+        messages = msg_resp.data or []
         debug["messages_count"] = len(messages)
 
-        debug["step"] = "aggregate"
-        total_per_sesi = defaultdict(int)
-        tanya_per_sesi = defaultdict(int)
-        for m in messages:
-            sid = m.get("session_id")
-            total_per_sesi[sid] += 1
-            if m.get("role") == "user":
-                tanya_per_sesi[sid] += 1
-
-        debug["step"] = "build hasil"
-        hasil = []
-        for s in sessions:
-            sid = s.get("id")
-            hasil.append({
-                "id": sid,
-                "materi": s.get("materi"),
-                "tujuan": s.get("tujuan"),
-                "metode": s.get("metode"),
-                "universe": s.get("universe"),
-                "created_at": s.get("created_at"),
-                "jumlah_pesan": total_per_sesi.get(sid, 0),
-                "jumlah_tanya": tanya_per_sesi.get(sid, 0),
-            })
-
         return {
-            "total_sesi": len(sessions),
-            "total_pesan": len(messages),
-            "sessions": hasil,
+            "ok": True,
+            "debug": debug,
+            "sample_sessions": sessions,
+            "sample_messages": messages,
         }
     except Exception as e:
         return JSONResponse(
