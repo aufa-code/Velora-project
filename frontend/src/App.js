@@ -7,6 +7,7 @@ import Quiz from './pages/Quiz';
 import Review from './pages/Review';
 import ReviewDetail from './pages/ReviewDetail';
 import Gamifikasi from './pages/Gamifikasi';
+import ImportMateri from './pages/ImportMateri';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/review" element={<Review />} />
         <Route path="/review/topik" element={<ReviewDetail />} />
         <Route path="/gamifikasi" element={<Gamifikasi />} />
+        <Route path="/import" element={<ImportMateri />} />
       </Routes>
     </BrowserRouter>
   );
