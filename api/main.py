@@ -4,7 +4,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.routes import setup, session, progress, quiz, reviews
+from backend.routes import setup, session, progress, quiz, reviews, stats
 
 app = FastAPI(
     title="Velora API",
@@ -31,6 +31,7 @@ app.include_router(session.router)
 app.include_router(progress.router)
 app.include_router(quiz.router)
 app.include_router(reviews.router)
+app.include_router(stats.router)
 
 # Root Endpoint
 @app.get("/")
