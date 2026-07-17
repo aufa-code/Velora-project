@@ -234,6 +234,7 @@ export default function Setup() {
                     <button onClick={() => navigate('/dashboard')} style={{marginTop:'14px',padding:'8px 20px',backgroundColor:'transparent',color:'#8b8bff',border:'1px solid #2d2d44',borderRadius:'100px',fontSize:'13px',fontWeight:600,cursor:'pointer'}}>📊 Lihat Progress Belajar</button>
                     <button onClick={() => navigate('/quiz')} style={{marginTop:'14px',marginLeft:'8px',padding:'8px 20px',backgroundColor:'transparent',color:'#8b8bff',border:'1px solid #2d2d44',borderRadius:'100px',fontSize:'13px',fontWeight:600,cursor:'pointer'}}>🎯 Latihan Quiz</button>
                     <button onClick={() => navigate('/review')} style={{marginTop:'14px',marginLeft:'8px',padding:'8px 20px',backgroundColor:'transparent',color:'#8b8bff',border:'1px solid #2d2d44',borderRadius:'100px',fontSize:'13px',fontWeight:600,cursor:'pointer'}}>🔁 Review Hari Ini</button>
+                    <button onClick={() => navigate('/gamifikasi')} style={{marginTop:'14px',marginLeft:'8px',padding:'8px 20px',backgroundColor:'transparent',color:'#8b8bff',border:'1px solid #2d2d44',borderRadius:'100px',fontSize:'13px',fontWeight:600,cursor:'pointer'}}>🎮 Pencapaian</button>
                 </div>
 
                 {error && <div style={styles.errorMsg}>{error}</div>}
