@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Velora",
+  "name": "Velora — Belajar Adaptif",
+  "description": "Platform belajar adaptif dengan AI — metode Socratic, quiz, spaced repetition, dan gamifikasi.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -20,6 +21,7 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "orientation": "portrait",
+  "theme_color": "#6366f1",
+  "background_color": "#0a0a0f"
 }
