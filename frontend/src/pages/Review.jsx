@@ -118,7 +118,7 @@ function Review() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <span style={styles.badge(due)}>{labelSisa(item.sisa_hari)}</span>
         {due && (
-          <button style={styles.cta} onClick={() => navigate('/quiz')}>🎯 Review</button>
+          <button style={styles.cta} onClick={() => navigate('/review/topik', { state: { materi: item.materi } })}>📖 Review</button>
         )}
       </div>
     </div>

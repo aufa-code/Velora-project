@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -147,8 +147,10 @@ const LETTERS = ['A', 'B', 'C', 'D'];
 
 function Quiz() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const prefillMateri = (location.state && location.state.materi) || '';
   const [mode, setMode] = useState('quiz');
-  const [materi, setMateri] = useState('');
+  const [materi, setMateri] = useState(prefillMateri);
   const [jumlah, setJumlah] = useState(5);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -169,8 +171,12 @@ function Quiz() {
     setError('');
   };
 
-  const generate = async () => {
-    if (!materi.trim()) {
+  const generate = async (materiArg) => {
+    const topik =
+      typeof materiArg === 'string' && materiArg.trim()
+        ? materiArg.trim()
+        : materi.trim();
+    if (!topik) {
       setError('Isi dulu materi/topiknya ya.');
       return;
     }
@@ -181,7 +187,7 @@ function Quiz() {
       const res = await fetch(API_URL + endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ materi: materi.trim(), jumlah: Number(jumlah) || 5 }),
+        body: JSON.stringify({ materi: topik, jumlah: Number(jumlah) || 5 }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -196,6 +202,14 @@ function Quiz() {
       setLoading(false);
     }
   };
+
+  // Auto-generate kalau dibuka dari halaman Review (bawa nama materi)
+  useEffect(() => {
+    if (prefillMateri) {
+      generate(prefillMateri);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const pilihJawaban = (soalIdx, opsiIdx) => {
     if (jawaban[soalIdx] !== undefined) return; // sudah dijawab, lock
@@ -244,7 +258,7 @@ function Quiz() {
             value={jumlah}
             onChange={(e) => setJumlah(e.target.value)}
           />
-          <button style={styles.primaryBtn} onClick={generate} disabled={loading}>
+          <button style={styles.primaryBtn} onClick={() => generate()} disabled={loading}>
             {loading ? '⏳ AI lagi bikin...' : (mode === 'quiz' ? '🚀 Buat Soal' : '🚀 Buat Flashcard')}
           </button>
         </div>
