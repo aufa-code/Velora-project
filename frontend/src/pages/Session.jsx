@@ -1,35 +1,51 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios'; // KOREKSI: Sekarang sudah di-import dengan benar dari 'axios'
+import axios from 'axios';
 
 const Session = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   // Ambil sessionId dari react-router state (useLocation)
   const sessionId = location.state?.sessionId;
 
   // State untuk menyimpan alur chat bubble
   const sessionData = location.state;
-  const materiLabel = sessionData?.materi || localStorage.getItem('velora_materi') || 'materi yang kamu pilih';
+  const materiLabel =
+    sessionData?.materi || localStorage.getItem('velora_materi') || 'materi yang kamu pilih';
   const [messages, setMessages] = useState([
-  {
-    sender: 'ai',
-    text: `Oke, kita mulai belajar tentang "${materiLabel}". Mau mulai dari mana?`
-  }
+    {
+      sender: 'ai',
+      text: `Oke, kita mulai belajar tentang "${materiLabel}". Mau mulai dari mana?`,
+    },
   ]);
-  
+
   // State untuk input pesan dan loading indicator
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
+
+  // State untuk Voice Mode
+  const [listening, setListening] = useState(false);
+  const [voiceOn, setVoiceOn] = useState(false);
+  const [voiceError, setVoiceError] = useState('');
+  const recognitionRef = useRef(null);
+  const voiceOnRef = useRef(false);
+
   // Ref untuk mekanisme auto scroll
   const chatEndRef = useRef(null);
+
+  // Sinkronkan voiceOn ke ref biar tidak kena stale closure
+  useEffect(() => {
+    voiceOnRef.current = voiceOn;
+    if (!voiceOn && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+  }, [voiceOn]);
 
   // Proteksi halaman jika user mencoba akses langsung tanpa sessionId dari Setup
   useEffect(() => {
     if (!sessionId) {
-      console.error("Session ID tidak ditemukan. Kembali ke halaman setup.");
+      console.error('Session ID tidak ditemukan. Kembali ke halaman setup.');
       navigate('/');
     }
   }, [sessionId, navigate]);
@@ -39,11 +55,31 @@ const Session = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
-  // Fungsi handle kirim pesan (Menggunakan POST ke endpoint yang ditentukan)
-  const handleSendMessage = async () => {
-    if (!inputText.trim() || isLoading) return;
+  // Bersihkan suara saat keluar halaman
+  useEffect(() => {
+    return () => {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      recognitionRef.current?.stop();
+    };
+  }, []);
 
-    const userMessage = inputText.trim();
+  // Text-to-Speech: bacakan teks pakai suara Bahasa Indonesia
+  const speak = (text) => {
+    if (!('speechSynthesis' in window) || !text) return;
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'id-ID';
+    utter.rate = 1;
+    utter.pitch = 1;
+    window.speechSynthesis.speak(utter);
+  };
+
+  // Fungsi handle kirim pesan (POST ke endpoint /session/chat)
+  const handleSendMessage = async (overrideText) => {
+    const text = (typeof overrideText === 'string' ? overrideText : inputText).trim();
+    if (!text || isLoading) return;
+
+    const userMessage = text;
     setInputText(''); // Clear input teks segera setelah dikirim
 
     // Render bubble chat user di sebelah kanan secara instan
@@ -51,29 +87,63 @@ const Session = () => {
     setIsLoading(true); // Tampilkan loading indicator
 
     try {
-      // POST ke http://localhost:8000/session/chat membawa data {session_id, message}
+      // POST ke /session/chat membawa data {session_id, message}
       const response = await axios.post(`${process.env.REACT_APP_API_URL}/session/chat`, {
         session_id: sessionId,
-        message: userMessage
+        message: userMessage,
       });
 
       // Menyesuaikan format data dari backend
-      const aiResponse = response.data?.response || response.data?.message || 'Maaf, Velora tidak memberikan respon valid.';
+      const aiResponse =
+        response.data?.response ||
+        response.data?.message ||
+        'Maaf, Velora tidak memberikan respon valid.';
 
       // Tampilkan response AI di bubble chat kiri
       setMessages((prev) => [...prev, { sender: 'ai', text: aiResponse }]);
+
+      // Kalau Voice Mode aktif, bacakan jawaban Velora
+      if (voiceOnRef.current) speak(aiResponse);
     } catch (error) {
       console.error('Error saat mengirim pesan:', error);
       setMessages((prev) => [
         ...prev,
-        { sender: 'ai', text: 'Gagal tersambung dengan server Velora. Silakan coba lagi nanti.' }
+        { sender: 'ai', text: 'Gagal tersambung dengan server Velora. Silakan coba lagi nanti.' },
       ]);
     } finally {
       setIsLoading(false); // Selesai loading
     }
   };
 
-  // Handler KeyDown untuk menangkap aksi tekan tombol Enter (Tanpa menggunakan Tag Form HTML)
+  // Mulai mendengarkan suara (Speech-to-Text)
+  const startListening = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setVoiceError('Browser kamu belum mendukung input suara. Coba pakai Chrome terbaru ya.');
+      return;
+    }
+    setVoiceError('');
+    const rec = new SpeechRecognition();
+    rec.lang = 'id-ID';
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+    rec.onresult = (e) => {
+      const transcript = e.results[0][0].transcript;
+      handleSendMessage(transcript);
+    };
+    rec.onerror = () => setListening(false);
+    rec.onend = () => setListening(false);
+    recognitionRef.current = rec;
+    setListening(true);
+    rec.start();
+  };
+
+  const stopListening = () => {
+    recognitionRef.current?.stop();
+    setListening(false);
+  };
+
+  // Handler KeyDown untuk menangkap aksi tekan tombol Enter
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       handleSendMessage();
@@ -88,7 +158,16 @@ const Session = () => {
           <div style={styles.statusDot}></div>
           <h1 style={styles.headerTitle}>Velora Active Session</h1>
         </div>
-        <span style={styles.sessionIdBadge}>ID: {sessionId || 'N/A'}</span>
+        <div style={styles.headerRight}>
+          <button
+            onClick={() => setVoiceOn((v) => !v)}
+            style={{ ...styles.voiceToggle, ...(voiceOn ? styles.voiceToggleOn : {}) }}
+            title="Bacakan jawaban Velora dengan suara"
+          >
+            {voiceOn ? '🔊 Suara: ON' : '🔇 Suara: OFF'}
+          </button>
+          <span style={styles.sessionIdBadge}>ID: {sessionId || 'N/A'}</span>
+        </div>
       </div>
 
       {/* Area Tampilan Chat Bubble */}
@@ -98,7 +177,6 @@ const Session = () => {
             key={index}
             style={{
               ...styles.messageRow,
-              // Pesan user di kanan, pesan AI di kiri
               justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start',
             }}
           >
@@ -109,52 +187,60 @@ const Session = () => {
               }}
             >
               {msg.text}
+              {msg.sender === 'ai' && (
+                <button
+                  onClick={() => speak(msg.text)}
+                  style={styles.speakBtn}
+                  title="Dengarkan"
+                >
+                  🔊
+                </button>
+              )}
             </div>
           </div>
         ))}
 
         {/* Loading Indicator saat menunggu respons AI */}
         {isLoading && (
-          <div style={{ ...styles.messageRow, justifyContent: 'flex-start' }}>
+          <div style={styles.messageRow}>
             <div style={{ ...styles.bubble, ...styles.aiBubble, ...styles.loadingBubble }}>
               <span style={styles.dot}>.</span>
-              <span style={{ ...styles.dot, animationDelay: '0.2s' }}>.</span>
-              <span style={{ ...styles.dot, animationDelay: '0.4s' }}>.</span>
-              <span style={{ marginLeft: '10px', fontSize: '0.9rem', color: '#94a3b8' }}>
-                Velora sedang merangkum materi...
-              </span>
+              <span style={styles.dot}>.</span>
+              <span style={styles.dot}>.</span>
+              <span style={styles.loadingText}>Velora sedang merangkum materi...</span>
             </div>
           </div>
         )}
-        
+
         {/* Anchor element untuk target Auto Scroll */}
         <div ref={chatEndRef} />
       </div>
 
-      {/* Input Teks di Bawah + Tombol Kirim (Tanpa Tag Form) */}
+      {/* Input Teks di Bawah + Tombol Mic + Kirim */}
       <div style={styles.inputContainer}>
         <div style={styles.inputWrapper}>
+          <button
+            onClick={listening ? stopListening : startListening}
+            disabled={isLoading}
+            style={{ ...styles.micButton, ...(listening ? styles.micActive : {}) }}
+            title={listening ? 'Berhenti merekam' : 'Bicara'}
+          >
+            {listening ? '⏹️' : '🎤'}
+          </button>
           <input
             type="text"
-            placeholder="Tanyakan materi atau codemu di sini..."
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={isLoading}
+            placeholder={listening ? 'Mendengarkan...' : 'Ketik atau tekan mic buat ngomong...'}
             style={styles.input}
           />
-          <button
-            onClick={handleSendMessage}
-            disabled={isLoading || !inputText.trim()}
-            style={{
-              ...styles.sendButton,
-              opacity: (isLoading || !inputText.trim()) ? 0.5 : 1,
-              cursor: (isLoading || !inputText.trim()) ? 'not-allowed' : 'pointer'
-            }}
-          >
+          <button onClick={() => handleSendMessage()} disabled={isLoading} style={styles.sendButton}>
             Kirim
           </button>
         </div>
+        {voiceError && <div style={styles.voiceError}>{voiceError}</div>}
       </div>
     </div>
   );
@@ -185,6 +271,11 @@ const styles = {
     alignItems: 'center',
     gap: '12px',
   },
+  headerRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+  },
   statusDot: {
     width: '10px',
     height: '10px',
@@ -197,6 +288,21 @@ const styles = {
     fontWeight: '600',
     margin: 0,
     letterSpacing: '0.5px',
+  },
+  voiceToggle: {
+    backgroundColor: '#1e1e2f',
+    color: '#94a3b8',
+    border: '1px solid #232336',
+    padding: '6px 12px',
+    borderRadius: '8px',
+    fontSize: '0.78rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+  },
+  voiceToggleOn: {
+    backgroundColor: '#6366f1',
+    color: '#ffffff',
+    border: '1px solid #6366f1',
   },
   sessionIdBadge: {
     fontSize: '0.75rem',
@@ -238,9 +344,23 @@ const styles = {
     borderBottomLeftRadius: '4px',
     border: '1px solid #232336',
   },
+  speakBtn: {
+    marginLeft: '8px',
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    fontSize: '0.85rem',
+    opacity: 0.6,
+    padding: 0,
+  },
   loadingBubble: {
     display: 'flex',
     alignItems: 'center',
+  },
+  loadingText: {
+    marginLeft: '8px',
+    color: '#94a3b8',
+    fontSize: '0.85rem',
   },
   dot: {
     fontSize: '1.5rem',
@@ -263,6 +383,19 @@ const styles = {
     padding: '4px',
     alignItems: 'center',
   },
+  micButton: {
+    backgroundColor: 'transparent',
+    color: '#f8fafc',
+    border: 'none',
+    fontSize: '1.2rem',
+    padding: '8px 12px',
+    cursor: 'pointer',
+    borderRadius: '8px',
+  },
+  micActive: {
+    backgroundColor: '#ef4444',
+    color: '#ffffff',
+  },
   input: {
     flex: 1,
     backgroundColor: 'transparent',
@@ -280,7 +413,14 @@ const styles = {
     borderRadius: '8px',
     fontSize: '0.9rem',
     fontWeight: '600',
+    cursor: 'pointer',
     transition: 'background-color 0.2s',
+  },
+  voiceError: {
+    color: '#fca5a5',
+    fontSize: '12px',
+    textAlign: 'center',
+    marginTop: '8px',
   },
 };
 
