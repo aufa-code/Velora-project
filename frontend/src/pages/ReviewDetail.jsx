@@ -103,6 +103,13 @@ function ReviewDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const renderInline = (text) => {
+    const parts = text.split('**');
+    return parts.map((p, idx) =>
+      idx % 2 === 1 ? <strong key={idx}>{p}</strong> : <span key={idx}>{p}</span>
+    );
+  };
+
   const renderRingkasan = () => {
     const lines = ringkasan.split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
     return lines.map((line, i) => {
@@ -112,11 +119,11 @@ function ReviewDetail() {
         return (
           <div key={i} style={styles.bullet}>
             <span style={styles.dot}>▸</span>
-            <span>{text}</span>
+            <span>{renderInline(text)}</span>
           </div>
         );
       }
-      return <div key={i} style={styles.para}>{line}</div>;
+      return <div key={i} style={styles.para}>{renderInline(line)}</div>;
     });
   };
 

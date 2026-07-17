@@ -152,6 +152,7 @@ function Quiz() {
   const [mode, setMode] = useState('quiz');
   const [materi, setMateri] = useState(prefillMateri);
   const [jumlah, setJumlah] = useState(5);
+  const [level, setLevel] = useState('sedang');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -187,7 +188,7 @@ function Quiz() {
       const res = await fetch(API_URL + endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ materi: topik, jumlah: Number(jumlah) || 5 }),
+        body: JSON.stringify({ materi: topik, jumlah: Number(jumlah) || 5, level }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -249,6 +250,36 @@ function Quiz() {
             placeholder="Contoh: Hukum Newton, Teori Relativitas, Fotosintesis"
             onKeyDown={(e) => { if (e.key === 'Enter') generate(); }}
           />
+          {mode === 'quiz' && (
+            <>
+              <label style={styles.label}>Tingkat Kesulitan</label>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+                {[
+                  { id: 'mudah', label: '😊 Mudah' },
+                  { id: 'sedang', label: '🎯 Sedang' },
+                  { id: 'sulit', label: '🔥 Sulit' },
+                ].map((lv) => (
+                  <button
+                    key={lv.id}
+                    onClick={() => setLevel(lv.id)}
+                    style={{
+                      flex: 1,
+                      padding: '9px',
+                      borderRadius: '10px',
+                      border: '1px solid ' + (level === lv.id ? '#6366f1' : '#2d2d44'),
+                      backgroundColor: level === lv.id ? '#6366f1' : 'transparent',
+                      color: level === lv.id ? '#fff' : '#9ca3af',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {lv.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
           <label style={styles.label}>Jumlah ({mode === 'quiz' ? 'soal' : 'kartu'})</label>
           <input
             style={styles.input}

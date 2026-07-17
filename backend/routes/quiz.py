@@ -9,19 +9,17 @@ from backend.services.groq import get_ai_response
 
 router = APIRouter(prefix="/quiz", tags=["Quiz & Flashcard"])
 
-
 # ---------- Pydantic Schemas ----------
 class QuizGenerateRequest(BaseModel):
     session_id: Optional[str] = None
     materi: Optional[str] = None
     jumlah: int = 5
-
+    level: Optional[str] = "sedang"
 
 class FlashcardRequest(BaseModel):
     session_id: Optional[str] = None
     materi: Optional[str] = None
     jumlah: int = 5
-
 
 # ---------- Helpers ----------
 def _extract_json(text: str):
@@ -43,7 +41,6 @@ def _extract_json(text: str):
 
     return json.loads(cleaned)
 
-
 def _resolve_materi(session_id: Optional[str], materi: Optional[str]) -> str:
     """Tentukan materi dari input langsung atau dari session_id."""
     if materi and materi.strip():
@@ -63,7 +60,6 @@ def _resolve_materi(session_id: Optional[str], materi: Optional[str]) -> str:
         detail="Wajib mengisi 'materi' atau 'session_id' yang valid.",
     )
 
-
 def _clamp_jumlah(jumlah: int) -> int:
     """Batasi jumlah item 1..15 biar aman & cepat."""
     try:
@@ -72,6 +68,26 @@ def _clamp_jumlah(jumlah: int) -> int:
         n = 5
     return max(1, min(n, 15))
 
+# Instruksi tingkat kesulitan (adaptive difficulty)
+_LEVEL_INSTRUKSI = {
+    "mudah": (
+        "TINGKAT KESULITAN: MUDAH. Fokus pada definisi, istilah, dan konsep dasar. "
+        "Pertanyaan langsung tanpa perhitungan rumit atau jebakan."
+    ),
+    "sedang": (
+        "TINGKAT KESULITAN: SEDANG. Uji penerapan konsep dengan sedikit analisis "
+        "atau perhitungan sederhana. Opsi jawaban cukup mirip agar menantang."
+    ),
+    "sulit": (
+        "TINGKAT KESULITAN: SULIT. Buat soal analitis multi-langkah, studi kasus, "
+        "atau perhitungan menantang. Sertakan pengecoh (distraktor) yang masuk akal."
+    ),
+}
+
+def _resolve_level(level: Optional[str]) -> str:
+    """Normalisasi level ke salah satu dari mudah/sedang/sulit."""
+    lv = (level or "sedang").strip().lower()
+    return lv if lv in _LEVEL_INSTRUKSI else "sedang"
 
 # ---------- Endpoints ----------
 @router.post("/generate")
@@ -79,6 +95,7 @@ async def generate_quiz(request: QuizGenerateRequest):
     """Generate soal pilihan ganda dari materi (langsung / dari session_id)."""
     materi = _resolve_materi(request.session_id, request.materi)
     jumlah = _clamp_jumlah(request.jumlah)
+    level = _resolve_level(request.level)
 
     system_prompt = (
         "Kamu adalah generator soal kuis edukatif berbahasa Indonesia. "
@@ -87,6 +104,7 @@ async def generate_quiz(request: QuizGenerateRequest):
     )
     user_prompt = (
         f"Buatkan {jumlah} soal pilihan ganda tentang topik: \"{materi}\".\n"
+        f"{_LEVEL_INSTRUKSI[level]}\n"
         "Setiap soal WAJIB punya tepat 4 opsi jawaban dan hanya 1 yang benar.\n"
         "Balas HANYA dengan JSON array. Format tiap elemen:\n"
         "{\n"
@@ -96,7 +114,7 @@ async def generate_quiz(request: QuizGenerateRequest):
         '  "penjelasan": "penjelasan singkat kenapa jawaban itu benar"\n'
         "}\n"
         "Ketentuan: 'jawaban_benar' adalah index (0-3) dari opsi yang benar. "
-        "Bahasa Indonesia, jelas, dan variatif tingkat kesulitannya."
+        "Bahasa Indonesia dan jelas."
     )
 
     payload = [
@@ -144,10 +162,10 @@ async def generate_quiz(request: QuizGenerateRequest):
 
     return {
         "materi": materi,
+        "level": level,
         "jumlah": len(soal_valid),
         "soal": soal_valid,
     }
-
 
 @router.post("/flashcards")
 async def generate_flashcards(request: FlashcardRequest):
